@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EcoLens Forms</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --brand:#1f7a5c;
+    --brand-dark:#155a43;
+    --ink:#12211c;
+    --paper:#f6f8f6;
+    --card:#ffffff;
+    --line:#dfe6e1;
+    --muted:#5d6b64;
+    --danger:#b3413a;
+    --radius:10px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);}
+  a{color:var(--brand-dark);}
+  button{font-family:inherit;cursor:pointer;}
+  .btn{background:var(--brand);color:#fff;border:none;padding:10px 16px;border-radius:var(--radius);font-size:14px;font-weight:600;}
+  .btn:hover{background:var(--brand-dark);}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.secondary:hover{background:#f0f2f0;}
+  .btn.danger{background:#fff;color:var(--danger);border:1px solid var(--danger);}
+  .btn.small{padding:6px 10px;font-size:13px;}
+  input,textarea,select{font-family:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff;color:var(--ink);}
+  label{font-size:13px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px;}
+  .field{margin-bottom:16px;}
+  .row{display:flex;gap:14px;}
+  .row > *{flex:1;}
+  .topbar{background:#fff;border-bottom:1px solid var(--line);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+  .brand{font-weight:800;font-size:18px;letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--brand);}
+  .wrap{max-width:920px;margin:0 auto;padding:28px 20px 80px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px;}
+  .list-item{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--line);}
+  .list-item:last-child{border-bottom:none;}
+  .badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:20px;}
+  .badge.live{background:#e2f4ea;color:var(--brand-dark);}
+  .badge.draft{background:#eee;color:#777;}
+  h1{font-size:24px;margin:0 0 4px;}
+  h2{font-size:18px;margin:0 0 14px;}
+  .muted{color:var(--muted);font-size:14px;}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);}
+  .toggle-row:last-child{border-bottom:none;}
+  .switch{position:relative;width:42px;height:24px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:#d1d7d3;border-radius:24px;transition:.15s;}
+  .slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;}
+  input:checked + .slider{background:var(--brand);}
+  input:checked + .slider:before{transform:translateX(18px);}
+  .field-card{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;background:#fafcfa;}
+  .field-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .pill{font-size:11px;background:#eef2ef;padding:2px 8px;border-radius:20px;color:var(--muted);}
+  .login-box{max-width:340px;margin:80px auto;}
+  .center{text-align:center;}
+  .link-copy{display:flex;gap:8px;align-items:center;}
+  .link-copy input{background:#f0f2f0;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  th{color:var(--muted);font-weight:600;}
+  .table-wrap{overflow-x:auto;}
+  .empty{text-align:center;padding:50px 20px;color:var(--muted);}
+  .public-shell{min-height:100vh;background:var(--paper);}
+  .public-card{max-width:560px;margin:0 auto;background:#fff;border-radius:16px;border:1px solid var(--line);padding:32px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .public-header{text-align:center;margin-bottom:24px;}
+  .public-header img{max-height:56px;margin-bottom:14px;}
+  .req{color:var(--danger);}
+  .file-hint{font-size:12px;color:var(--muted);margin-top:4px;}
+  .success-box{text-align:center;padding:40px 20px;}
+  .success-icon{width:56px;height:56px;border-radius:50%;background:#e2f4ea;color:var(--brand-dark);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+  .kicker{font-size:12px;font-weight:700;color:var(--brand-dark);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  .footer-note{font-size:12px;color:var(--muted);margin-top:26px;text-align:center;}
+  .error-text{color:var(--danger);font-size:13px;margin-top:6px;}
+  .options-list textarea{min-height:60px;}
+  .doc-toolbar{display:flex;gap:4px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:14px;position:sticky;top:70px;z-index:5;}
+  .doc-toolbar button{background:#fff;border:1px solid transparent;border-radius:6px;padding:6px 10px;font-size:14px;color:var(--ink);}
+  .doc-toolbar button:hover{background:#f0f2f0;border-color:var(--line);}
+  .doc-toolbar select{width:auto;padding:6px 8px;}
+  .doc-page{background:#fff;border:1px solid var(--line);border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.06);max-width:800px;margin:0 auto;padding:60px 70px;min-height:800px;}
+  .doc-page[contenteditable]:focus{outline:none;}
+  .doc-title-input{border:none;font-size:26px;font-weight:800;padding:0;margin-bottom:4px;width:100%;}
+  .doc-title-input:focus{outline:none;}
+  @media print{ .topbar,.doc-toolbar,.footer-note,.doc-meta{display:none !important;} .doc-page{box-shadow:none;border:none;margin:0;padding:0;} body{background:#fff;} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const SUPABASE_URL = "https://girozhmjsyrqnbhacmwc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdpcm96aG1qc3lycW5iaGFjbXdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjQ3NTgsImV4cCI6MjA5ODMwMDc1OH0.llw8ZjQxZ8Sxz-tVmh0GNBAF26-llWI12jDZipCldC0";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const app = document.getElementById('app');
+const FIELD_TYPES = ["text","email","phone","number","textarea","select","radio","checkbox","date","file"];
+
+function esc(s){ return (s ?? "").toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function slugify(s){ return (s||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+function uid(){ return crypto.randomUUID(); }
+function fmtDate(d){ return new Date(d).toLocaleString(); }
+
+// ---------- AUTH ----------
+let currentUser = null; // { id, email, full_name, role }
+const rawEntryHash = location.hash; // captured before supabase-js may rewrite it
+const isInviteOrRecovery = /type=invite|type=recovery/.test(rawEntryHash);
+
+async function loadProfile(authUser){
+  const { data } = await sb.from('profiles').select('id, email, full_name, role').eq('id', authUser.id).single();
+  currentUser = data || { id: authUser.id, email: authUser.email, full_name: authUser.email, role: null };
+}
+
+async function initAuth(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await loadProfile(session.user);
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (session) await loadProfile(session.user);
+    else currentUser = null;
+    if (event !== 'INITIAL_SESSION') route();
+  });
+
+  if (session && isInviteOrRecovery){
+    return renderSetPassword();
+  }
+  route();
+}
+
+window.addEventListener('hashchange', route);
+window.addEventListener('DOMContentLoaded', initAuth);
+
+// ---------- ROUTER ----------
+function route(){
+  const hash = location.hash.slice(1) || '/';
+  const parts = hash.split('/').filter(Boolean);
+
+  if (parts[0] === 'form' && parts[1]) return renderPublicForm(parts[1]);
+  if (parts[0] === 'edit' && parts[1]) return requireAuth(() => renderBuilder(parts[1]));
+  if (parts[0] === 'submissions' && parts[1]) return requireAuth(() => renderSubmissions(parts[1]));
+  if (parts[0] === 'new') return requireAuth(() => renderBuilder(null));
+  if (parts[0] === 'docs' && parts[1] === 'new') return requireAuth(() => renderDocEditor(null));
+  if (parts[0] === 'docs' && parts[1] === 'view' && parts[2]) return renderDocViewer(parts[2]);
+  if (parts[0] === 'docs' && parts[1]) return requireAuth(() => renderDocEditor(parts[1]));
+  if (parts[0] === 'docs') return requireAuth(renderDocsList);
+  if (parts[0] === 'admins') return requireAuth(renderAdmins);
+  return requireAuth(renderDashboard);
+}
+
+function isAuthed(){ return !!currentUser && currentUser.role === 'admin'; }
+function requireAuth(fn){ if (isAuthed()) return fn(); renderLogin(); }
+
+// ---------- LOGIN ----------
+function renderLogin(errText){
+  app.innerHTML = `
+    <div class="topbar"><div class="brand"><span class="dot"></span>EcoLens Forms</div></div>
+    <div class="login-box card">
+      <h2>Admin sign in</h2>
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com" /></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPw" placeholder="Your password" /></div>
+      <div id="loginErr" class="error-text">${errText ? esc(errText) : ''}</div>
+      <button class="btn" id="loginBtn" style="width:100%;margin-top:6px;">Sign in</button>
+      <div class="center" style="margin-top:12px;"><a href="#" id="forgotLink" class="muted" style="font-size:13px;">Forgot password?</a></div>
+    </div>`;
+
+  document.getElementById('loginBtn').onclick = async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPw').value;
+    const errEl = document.getElementById('loginErr');
+    errEl.textContent = 'Signing in…';
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error){ errEl.textContent = error.message; return; }
+    await loadProfile(data.user);
+    if (currentUser.role !== 'admin'){
+      errEl.textContent = 'This account does not have admin access.';
+      await sb.auth.signOut();
+      currentUser = null;
+      return;
+    }
+    route();
+  };
+  document.getElementById('forgotLink').onclick = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    if (!email){ document.getElementById('loginErr').textContent = 'Enter your email above first.'; return; }
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    document.getElementById('loginErr').textContent = error ? error.message : 'Password reset email sent — check your inbox.';
+  };
+  document.getElementById('loginPw').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); });
+}
+
+async function renderSetPassword(){
+  app.innerHTML = `
+    <div class="topbar"><div class="brand"><span class="dot"></span>EcoLens Forms</div></div>
+    <div class="login-box card">
+      <h2>Set your password</h2>
+      <p class="muted">You're setting up admin access for this account.</p>
+      <div class="field"><label>New password</label><input type="password" id="newPw" placeholder="At least 8 characters" /></div>
+      <div id="setPwErr" class="error-text"></div>
+      <button class="btn" id="setPwBtn" style="width:100%;margin-top:6px;">Save password &amp; continue</button>
+    </div>`;
+  document.getElementById('setPwBtn').onclick = async () => {
+    const password = document.getElementById('newPw').value;
+    const errEl = document.getElementById('setPwErr');
+    if (password.length < 8){ errEl.textContent = 'Use at least 8 characters.'; return; }
+    const { error } = await sb.auth.updateUser({ password });
+    if (error){ errEl.textContent = error.message; return; }
+    history.replaceState(null, '', location.pathname);
+    route();
+  };
+}
+
+async function logout(){
+  await sb.auth.signOut();
+  currentUser = null;
+  location.hash = '#/';
+  renderLogin();
+}
+
+async function callAdminFn(action, payload){
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/manage-admins`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  return res.json();
+}
+
+function topbar(active){
+  return `<div class="topbar">
+    <div class="brand"><span class="dot"></span>EcoLens Forms</div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <a href="#/"><button class="btn ${active==='forms'?'':'secondary'} small">Forms</button></a>
+      <a href="#/docs"><button class="btn ${active==='docs'?'':'secondary'} small">Documents</button></a>
+      <a href="#/admins"><button class="btn ${active==='admins'?'':'secondary'} small">Admins</button></a>
+      <a href="#/new"><button class="btn secondary small">+ New form</button></a>
+      <a href="#/docs/new"><button class="btn secondary small">+ New document</button></a>
+      <span class="muted" style="font-size:12px;margin-left:6px;">${currentUser ? esc(currentUser.email) : ''}</span>
+      <button class="btn secondary small" onclick="logout()">Sign out</button>
+    </div>
+  </div>`;
+}
+
+// ---------- ADMINS ----------
+async function renderAdmins(){
+  app.innerHTML = topbar('admins') + `<div class="wrap">
+    <h1>Admins</h1>
+    <p class="muted">Anyone listed here can sign in and manage forms and documents.</p>
+    <div class="card">
+      <h2>Invite a new admin</h2>
+      <div class="row">
+        <div class="field"><label>Full name</label><input id="inviteName" placeholder="Jane Doe" /></div>
+        <div class="field"><label>Email</label><input id="inviteEmail" type="email" placeholder="jane@example.com" /></div>
+      </div>
+      <div id="inviteMsg" class="muted" style="margin-bottom:8px;"></div>
+      <button class="btn" id="inviteBtn">Send invite</button>
+      <div class="muted" style="font-size:12px;margin-top:8px;">They'll get an email with a link to set their own password and sign in.</div>
+    </div>
+    <div class="card"><h2>Current admins</h2><div id="adminList"><div class="empty">Loading…</div></div></div>
+  </div>`;
+
+  document.getElementById('inviteBtn').onclick = async () => {
+    const email = document.getElementById('inviteEmail').value.trim();
+    const fullName = document.getElementById('inviteName').value.trim();
+    const msg = document.getElementById('inviteMsg');
+    if (!email){ msg.textContent = 'Enter an email address.'; return; }
+    msg.textContent = 'Sending invite…';
+    const result = await callAdminFn('invite', { email, fullName });
+    if (result.error){ msg.textContent = result.error; return; }
+    msg.textContent = 'Invite sent ✓';
+    document.getElementById('inviteEmail').value = '';
+    document.getElementById('inviteName').value = '';
+    loadAdminList();
+  };
+
+  loadAdminList();
+}
+
+async function loadAdminList(){
+  const el = document.getElementById('adminList');
+  const result = await callAdminFn('list', {});
+  if (result.error){ el.innerHTML = `<div class="empty">${esc(result.error)}</div>`; return; }
+  el.innerHTML = result.admins.map(a => `
+    <div class="list-item">
+      <div><strong>${esc(a.full_name || a.email)}</strong><div class="muted">${esc(a.email)} · admin since ${fmtDate(a.created_at)}</div></div>
+      ${a.id !== currentUser.id ? `<button class="btn danger small" onclick="removeAdmin('${a.id}')">Remove access</button>` : `<span class="pill">You</span>`}
+    </div>`).join('');
+}
+
+async function removeAdmin(userId){
+  if (!confirm('Remove admin access for this person?')) return;
+  const result = await callAdminFn('remove', { userId });
+  if (result.error){ alert(result.error); return; }
+  loadAdminList();
+}
+
+
+// ---------- DASHBOARD ----------
+async function renderDashboard(){
+  app.innerHTML = topbar('forms') + `<div class="wrap"><h1>Your forms</h1><p class="muted">Build a form, share its link, and track submissions.</p><div id="list" class="card"><div class="empty">Loading…</div></div></div>`;
+  const { data: forms, error } = await sb.from('forms').select('*').order('created_at', { ascending:false });
+  const list = document.getElementById('list');
+  if (error){ list.innerHTML = `<div class="empty">Couldn't load forms: ${esc(error.message)}</div>`; return; }
+  if (!forms.length){ list.innerHTML = `<div class="empty">No forms yet. <a href="#/new">Create your first form</a>.</div>`; return; }
+
+  const counts = {};
+  for (const f of forms){
+    const { count } = await sb.from('form_submissions').select('id', { count:'exact', head:true }).eq('form_id', f.id);
+    counts[f.id] = count || 0;
+  }
+
+  list.innerHTML = forms.map(f => `
+    <div class="list-item">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <strong>${esc(f.title)}</strong>
+          <span class="badge ${f.published ? 'live':'draft'}">${f.published ? 'Live':'Draft'}</span>
+        </div>
+        <div class="muted">/${esc(f.slug)} · ${counts[f.id]} submission${counts[f.id]===1?'':'s'}${f.payment_enabled ? ' · 💳 paid' : ''}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn secondary small" onclick="copyLink('${f.slug}')">Copy link</button>
+        <a href="#/submissions/${f.id}"><button class="btn secondary small">Submissions</button></a>
+        <a href="#/edit/${f.id}"><button class="btn secondary small">Edit</button></a>
+        <button class="btn danger small" onclick="deleteForm('${f.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function copyLink(slug){
+  const url = `${location.origin}${location.pathname}#/form/${slug}`;
+  navigator.clipboard.writeText(url).then(() => alert('Link copied:\n' + url));
+}
+
+async function deleteForm(id){
+  if (!confirm('Delete this form and all its submissions? This cannot be undone.')) return;
+  await sb.from('forms').delete().eq('id', id);
+  renderDashboard();
+}
+
+// ---------- BUILDER ----------
+let builderState = null;
+
+async function renderBuilder(formId){
+  if (formId){
+    const { data: form } = await sb.from('forms').select('*').eq('id', formId).single();
+    const { data: fields } = await sb.from('form_fields').select('*').eq('form_id', formId).order('position');
+    builderState = { ...form, fields: fields || [] };
+  } else {
+    builderState = {
+      id: null, title:'', slug:'', description:'', logo_url:'', brand_color:'#1f7a5c',
+      published:false, allow_file_upload:false, max_file_size_mb:5,
+      payment_enabled:false, payment_amount:0, payment_currency:'INR', payment_gateway:'stripe',
+      email_confirmation_enabled:false, confirmation_subject:'Thanks for your submission!',
+      confirmation_message:'We received your submission and will be in touch soon.',
+      submit_button_text:'Submit', success_message:'Thank you! Your response has been recorded.',
+      fields: []
+    };
+  }
+  drawBuilder();
+}
+
+function drawBuilder(){
+  const s = builderState;
+  app.innerHTML = topbar('forms') + `
+  <div class="wrap">
+    <h1>${s.id ? 'Edit form' : 'New form'}</h1>
+    <p class="muted">Configure your form, then save and share its link.</p>
+
+    <div class="card">
+      <h2>Basics</h2>
+      <div class="row">
+        <div class="field">
+          <label>Form title</label>
+          <input id="f_title" value="${esc(s.title)}" placeholder="e.g. Join EcoLens Membership" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Shareable link (slug)</label>
+        <div class="link-copy">
+          <span class="muted">${location.origin}${location.pathname}#/form/</span>
+          <input id="f_slug" value="${esc(s.slug)}" placeholder="join-membership" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Description (shown at top of form)</label>
+        <textarea id="f_desc" rows="2">${esc(s.description)}</textarea>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Logo / design</label>
+          <input type="file" id="f_logo" accept="image/png,image/jpeg,image/svg+xml,image/webp" />
+          ${s.logo_url ? `<div class="file-hint">Current: <a href="${s.logo_url}" target="_blank">view logo</a></div>` : ''}
+        </div>
+        <div class="field">
+          <label>Brand color</label>
+          <input type="color" id="f_color" value="${s.brand_color || '#1f7a5c'}" style="height:40px;padding:2px;" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Submit button text</label>
+          <input id="f_submit_text" value="${esc(s.submit_button_text)}" />
+        </div>
+        <div class="field">
+          <label>Success message</label>
+          <input id="f_success_msg" value="${esc(s.success_message)}" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Options</h2>
+      <div class="toggle-row">
+        <div><strong>File upload</strong><div class="muted">Allow a file-upload field (max 5&nbsp;MB per file)</div></div>
+        <label class="switch"><input type="checkbox" id="opt_file" ${s.allow_file_upload?'checked':''}><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><strong>Payment gateway</strong><div class="muted">Require payment before the form can be submitted</div></div>
+        <label class="switch"><input type="checkbox" id="opt_pay" ${s.payment_enabled?'checked':''}><span class="slider"></span></label>
+      </div>
+      <div id="payOptions" style="${s.payment_enabled?'':'display:none'};padding:10px 0 6px;">
+        <div class="row">
+          <div class="field"><label>Amount</label><input type="number" min="0" step="0.01" id="pay_amount" value="${s.payment_amount||0}" /></div>
+          <div class="field"><label>Currency</label>
+            <select id="pay_currency">
+              <option value="INR" ${s.payment_currency==='INR'?'selected':''}>INR (₹)</option>
+              <option value="USD" ${s.payment_currency==='USD'?'selected':''}>USD ($)</option>
+            </select>
+          </div>
+          <div class="field"><label>Gateway</label>
+            <select id="pay_gateway">
+              <option value="stripe" ${s.payment_gateway==='stripe'?'selected':''}>Stripe</option>
+              <option value="razorpay" ${s.payment_gateway==='razorpay'?'selected':''}>Razorpay (coming soon)</option>
+            </select>
+          </div>
+        </div>
+        <div class="muted" style="font-size:12px;">Stripe needs a <code>STRIPE_SECRET_KEY</code> project secret to actually charge cards — see setup notes below.</div>
+      </div>
+      <div class="toggle-row">
+        <div><strong>Email confirmation</strong><div class="muted">Email the submitter automatically after they submit</div></div>
+        <label class="switch"><input type="checkbox" id="opt_email" ${s.email_confirmation_enabled?'checked':''}><span class="slider"></span></label>
+      </div>
+      <div id="emailOptions" style="${s.email_confirmation_enabled?'':'display:none'};padding:10px 0 0;">
+        <div class="field"><label>Confirmation email subject</label><input id="email_subject" value="${esc(s.confirmation_subject)}" /></div>
+        <div class="field"><label>Confirmation email message</label><textarea id="email_message" rows="3">${esc(s.confirmation_message)}</textarea></div>
+        <div class="muted" style="font-size:12px;">Needs one field of type "email" so we know where to send it, plus a <code>RESEND_API_KEY</code> project secret.</div>
+      </div>
+      <div class="toggle-row">
+        <div><strong>Published</strong><div class="muted">Only published forms are visible at their public link</div></div>
+        <label class="switch"><input type="checkbox" id="opt_published" ${s.published?'checked':''}><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Fields</h2>
+      <div id="fieldsList"></div>
+      <button class="btn secondary small" id="addFieldBtn">+ Add field</button>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" id="saveBtn">Save form</button>
+      ${s.id ? `<a href="#/submissions/${s.id}"><button class="btn secondary">View submissions</button></a>` : ''}
+      ${s.id && s.published ? `<button class="btn secondary" onclick="copyLink('${s.slug}')">Copy link</button>` : ''}
+      <div id="saveMsg" class="muted" style="align-self:center;"></div>
+    </div>
+  </div>`;
+
+  document.getElementById('opt_pay').onchange = e => document.getElementById('payOptions').style.display = e.target.checked ? '' : 'none';
+  document.getElementById('opt_email').onchange = e => document.getElementById('emailOptions').style.display = e.target.checked ? '' : 'none';
+  document.getElementById('f_title').addEventListener('input', e => {
+    if (!s.id && !s._slugTouched) document.getElementById('f_slug').value = slugify(e.target.value);
+  });
+  document.getElementById('f_slug').addEventListener('input', () => { s._slugTouched = true; });
+  document.getElementById('addFieldBtn').onclick = () => { s.fields.push({ id: uid(), label:'', field_type:'text', required:false, options:null, position:s.fields.length, _new:true }); drawFields(); };
+  document.getElementById('saveBtn').onclick = saveForm;
+  drawFields();
+}
+
+function drawFields(){
+  const s = builderState;
+  const el = document.getElementById('fieldsList');
+  if (!s.fields.length){ el.innerHTML = `<div class="muted" style="padding:10px 0;">No fields yet — add one below.</div>`; return; }
+  el.innerHTML = s.fields.map((f, i) => `
+    <div class="field-card">
+      <div class="field-card-head">
+        <span class="pill">Field ${i+1}</span>
+        <div>
+          <button class="btn secondary small" onclick="moveField(${i},-1)" ${i===0?'disabled':''}>↑</button>
+          <button class="btn secondary small" onclick="moveField(${i},1)" ${i===s.fields.length-1?'disabled':''}>↓</button>
+          <button class="btn danger small" onclick="removeField(${i})">Remove</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Label</label><input value="${esc(f.label)}" onchange="updateField(${i},'label',this.value)" placeholder="e.g. Full name" /></div>
+        <div class="field"><label>Type</label>
+          <select onchange="updateField(${i},'field_type',this.value)">
+            ${FIELD_TYPES.map(t => `<option value="${t}" ${f.field_type===t?'selected':''} ${t==='file' && !s.allow_file_upload ? 'disabled':''}>${t}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field" style="max-width:100px;"><label>Required</label>
+          <label class="switch"><input type="checkbox" ${f.required?'checked':''} onchange="updateField(${i},'required',this.checked)"><span class="slider"></span></label>
+        </div>
+      </div>
+      ${['select','radio'].includes(f.field_type) ? `
+        <div class="field options-list"><label>Options (one per line)</label>
+          <textarea onchange="updateField(${i},'options', this.value.split('\\n').map(x=>x.trim()).filter(Boolean))">${(f.options||[]).join('\n')}</textarea>
+        </div>` : ''}
+      ${f.field_type === 'file' && !s.allow_file_upload ? `<div class="error-text">Turn on "File upload" in Options above to use this field type.</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function updateField(i, key, val){ builderState.fields[i][key] = val; }
+function moveField(i, dir){
+  const f = builderState.fields;
+  const j = i + dir;
+  if (j < 0 || j >= f.length) return;
+  [f[i], f[j]] = [f[j], f[i]];
+  drawFields();
+}
+function removeField(i){ builderState.fields.splice(i,1); drawFields(); }
+
+async function saveForm(){
+  const s = builderState;
+  const msg = document.getElementById('saveMsg');
+  const title = document.getElementById('f_title').value.trim();
+  const slug = slugify(document.getElementById('f_slug').value);
+  if (!title || !slug){ msg.textContent = 'Title and slug are required.'; return; }
+  if (!s.fields.length){ msg.textContent = 'Add at least one field.'; return; }
+  for (const f of s.fields){ if (!f.label.trim()){ msg.textContent = 'Every field needs a label.'; return; } }
+
+  msg.textContent = 'Saving…';
+
+  let logoUrl = s.logo_url;
+  const logoFile = document.getElementById('f_logo').files[0];
+  if (logoFile){
+    const path = `${slug}-${Date.now()}-${logoFile.name}`;
+    const { error: upErr } = await sb.storage.from('form-logos').upload(path, logoFile, { upsert:true });
+    if (upErr){ msg.textContent = 'Logo upload failed: ' + upErr.message; return; }
+    logoUrl = sb.storage.from('form-logos').getPublicUrl(path).data.publicUrl;
+  }
+
+  const payload = {
+    title, slug, description: document.getElementById('f_desc').value,
+    logo_url: logoUrl, brand_color: document.getElementById('f_color').value,
+    submit_button_text: document.getElementById('f_submit_text').value || 'Submit',
+    success_message: document.getElementById('f_success_msg').value,
+    allow_file_upload: document.getElementById('opt_file').checked,
+    max_file_size_mb: 5,
+    payment_enabled: document.getElementById('opt_pay').checked,
+    payment_amount: parseFloat(document.getElementById('pay_amount').value) || 0,
+    payment_currency: document.getElementById('pay_currency').value,
+    payment_gateway: document.getElementById('pay_gateway').value,
+    email_confirmation_enabled: document.getElementById('opt_email').checked,
+    confirmation_subject: document.getElementById('email_subject').value,
+    confirmation_message: document.getElementById('email_message').value,
+    published: document.getElementById('opt_published').checked,
+  };
+
+  let formId = s.id;
+  if (formId){
+    const { error } = await sb.from('forms').update(payload).eq('id', formId);
+    if (error){ msg.textContent = 'Slug already taken or error: ' + error.message; return; }
+  } else {
+    const { data, error } = await sb.from('forms').insert(payload).select().single();
+    if (error){ msg.textContent = 'Slug already taken or error: ' + error.message; return; }
+    formId = data.id;
+  }
+
+  await sb.from('form_fields').delete().eq('form_id', formId);
+  const fieldsPayload = s.fields.map((f, i) => ({
+    form_id: formId, label: f.label, field_type: f.field_type,
+    required: !!f.required, options: f.options || null, position: i
+  }));
+  const { error: fErr } = await sb.from('form_fields').insert(fieldsPayload);
+  if (fErr){ msg.textContent = 'Saved form but fields failed: ' + fErr.message; return; }
+
+  msg.textContent = 'Saved ✓';
+  location.hash = `#/edit/${formId}`;
+  setTimeout(() => renderBuilder(formId), 300);
+}
+
+// ---------- SUBMISSIONS ----------
+async function renderSubmissions(formId){
+  app.innerHTML = topbar('forms') + `<div class="wrap"><div id="subHead"></div><div class="card"><div id="subTable" class="table-wrap"><div class="empty">Loading…</div></div></div></div>`;
+  const { data: form } = await sb.from('forms').select('*, form_fields(*)').eq('id', formId).single();
+  if (!form){ document.getElementById('subTable').innerHTML = '<div class="empty">Form not found.</div>'; return; }
+  document.getElementById('subHead').innerHTML = `<h1>${esc(form.title)} — Submissions</h1><p class="muted"><a href="#/edit/${form.id}">← back to editor</a></p>`;
+
+  const fields = (form.form_fields||[]).sort((a,b)=>a.position-b.position);
+  const { data: subs, error } = await sb.from('form_submissions').select('*, form_submission_files(*)').eq('form_id', formId).order('created_at',{ascending:false});
+  const el = document.getElementById('subTable');
+  if (error){ el.innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  if (!subs.length){ el.innerHTML = '<div class="empty">No submissions yet.</div>'; return; }
+
+  el.innerHTML = `<table><thead><tr>
+    <th>Submitted</th>
+    ${fields.map(f=>`<th>${esc(f.label)}</th>`).join('')}
+    ${form.payment_enabled ? '<th>Payment</th>' : ''}
+    ${form.allow_file_upload ? '<th>Files</th>' : ''}
+  </tr></thead><tbody>
+  ${subs.map(sub => `<tr>
+    <td>${fmtDate(sub.created_at)}</td>
+    ${fields.map(f => `<td>${esc(formatVal(sub.data ? sub.data[f.id] : null))}</td>`).join('')}
+    ${form.payment_enabled ? `<td>${esc(sub.payment_status)}</td>` : ''}
+    ${form.allow_file_upload ? `<td>${(sub.form_submission_files||[]).map(file=>`<a href="${file.file_url}" target="_blank">${esc(file.file_name)}</a>`).join(', ') || '—'}</td>` : ''}
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+function formatVal(v){ if (v==null) return '—'; if (Array.isArray(v)) return v.join(', '); return v; }
+
+// ---------- PUBLIC FORM ----------
+async function renderPublicForm(slug){
+  app.innerHTML = `<div class="public-shell"><div class="wrap"><div class="public-card center">Loading…</div></div></div>`;
+  const { data: form, error } = await sb.from('forms').select('*, form_fields(*)').eq('slug', slug).eq('published', true).single();
+  if (error || !form){
+    document.querySelector('.public-card').innerHTML = `<h2>Form not found</h2><p class="muted">This form may be unpublished or the link is incorrect.</p>`;
+    return;
+  }
+  const params = new URLSearchParams(location.hash.split('?')[1] || '');
+  const fields = (form.form_fields||[]).sort((a,b)=>a.position-b.position);
+  document.documentElement.style.setProperty('--brand', form.brand_color || '#1f7a5c');
+
+  if (params.get('paid') === '1' && params.get('psub')){
+    return showPaymentResult(form, params.get('psub'));
+  }
+
+  renderFormShell(form, fields);
+}
+
+function renderFormShell(form, fields, errorMsg){
+  app.innerHTML = `<div class="public-shell"><div class="wrap"><div class="public-card">
+    <div class="public-header">
+      ${form.logo_url ? `<img src="${form.logo_url}" alt="logo" />` : ''}
+      <h1>${esc(form.title)}</h1>
+      ${form.description ? `<p class="muted">${esc(form.description)}</p>` : ''}
+    </div>
+    <form id="publicForm">
+      ${fields.map(fieldHtml).join('')}
+      ${form.payment_enabled ? `<div class="field"><div class="muted">This form requires a payment of ${form.payment_currency} ${form.payment_amount} to submit.</div></div>` : ''}
+      ${errorMsg ? `<div class="error-text">${esc(errorMsg)}</div>` : ''}
+      <button type="submit" class="btn" style="width:100%;margin-top:8px;">${esc(form.submit_button_text || 'Submit')}</button>
+    </form>
+    <div class="footer-note">Powered by EcoLens Forms</div>
+  </div></div></div>`;
+
+  document.getElementById('publicForm').addEventListener('submit', e => { e.preventDefault(); submitForm(form, fields); });
+}
+
+function fieldHtml(f){
+  const req = f.required ? '<span class="req">*</span>' : '';
+  const name = `field_${f.id}`;
+  switch(f.field_type){
+    case 'textarea':
+      return `<div class="field"><label>${esc(f.label)} ${req}</label><textarea name="${name}" rows="4" ${f.required?'required':''}></textarea></div>`;
+    case 'select':
+      return `<div class="field"><label>${esc(f.label)} ${req}</label><select name="${name}" ${f.required?'required':''}><option value="">Select…</option>${(f.options||[]).map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select></div>`;
+    case 'radio':
+      return `<div class="field"><label>${esc(f.label)} ${req}</label>${(f.options||[]).map((o,i)=>`<label style="font-weight:400;display:flex;gap:6px;align-items:center;margin-bottom:6px;"><input type="radio" name="${name}" value="${esc(o)}" ${f.required && i===0?'':''} style="width:auto;"> ${esc(o)}</label>`).join('')}</div>`;
+    case 'checkbox':
+      return `<div class="field"><label style="font-weight:400;display:flex;gap:8px;align-items:center;"><input type="checkbox" name="${name}" style="width:auto;"> ${esc(f.label)} ${req}</label></div>`;
+    case 'file':
+      return `<div class="field"><label>${esc(f.label)} ${req}</label><input type="file" name="${name}" ${f.required?'required':''}><div class="file-hint">Max file size: 5 MB</div></div>`;
+    case 'date':
+      return `<div class="field"><label>${esc(f.label)} ${req}</label><input type="date" name="${name}" ${f.required?'required':''}></div>`;
+    case 'number':
+      return `<div class="field"><label>${esc(f.label)} ${req}</label><input type="number" name="${name}" ${f.required?'required':''}></div>`;
+    case 'phone':
+      return `<div class="field"><label>${esc(f.label)} ${req}</label><input type="tel" name="${name}" ${f.required?'required':''}></div>`;
+    case 'email':
+      return `<div class="field"><label>${esc(f.label)} ${req}</label><input type="email" name="${name}" ${f.required?'required':''}></div>`;
+    default:
+      return `<div class="field"><label>${esc(f.label)} ${req}</label><input type="text" name="${name}" ${f.required?'required':''}></div>`;
+  }
+}
+
+async function submitForm(form, fields){
+  const formEl = document.getElementById('publicForm');
+  const fd = new FormData(formEl);
+  const data = {};
+  let emailValue = null;
+  const fileEntries = [];
+  const MAX_BYTES = (form.max_file_size_mb || 5) * 1024 * 1024;
+
+  for (const f of fields){
+    const name = `field_${f.id}`;
+    if (f.field_type === 'file'){
+      const file = fd.get(name);
+      if (file && file.size > 0){
+        if (file.size > MAX_BYTES){
+          return renderFormShell(form, fields, `"${f.label}" is larger than ${form.max_file_size_mb}MB. Please choose a smaller file.`);
+        }
+        fileEntries.push({ field: f, file });
+      }
+    } else if (f.field_type === 'checkbox'){
+      data[f.id] = fd.get(name) === 'on';
+    } else {
+      const v = fd.get(name);
+      data[f.id] = v;
+      if (f.field_type === 'email' && v) emailValue = v;
+    }
+  }
+
+  const submitBtn = formEl.querySelector('button[type=submit]');
+  submitBtn.disabled = true; submitBtn.textContent = 'Submitting…';
+
+  const { data: sub, error } = await sb.from('form_submissions').insert({
+    form_id: form.id, data, submitter_email: emailValue,
+    payment_status: form.payment_enabled ? 'pending' : 'not_required',
+    payment_amount: form.payment_enabled ? form.payment_amount : null,
+    payment_currency: form.payment_enabled ? form.payment_currency : null,
+  }).select().single();
+
+  if (error){
+    submitBtn.disabled = false; submitBtn.textContent = form.submit_button_text || 'Submit';
+    return renderFormShell(form, fields, 'Something went wrong submitting the form: ' + error.message);
+  }
+
+  for (const { field, file } of fileEntries){
+    const path = `${form.slug}/${sub.id}-${field.id}-${file.name}`;
+    const { error: upErr } = await sb.storage.from('form-uploads').upload(path, file);
+    if (!upErr){
+      const url = sb.storage.from('form-uploads').getPublicUrl(path).data.publicUrl;
+      await sb.from('form_submission_files').insert({ submission_id: sub.id, field_id: field.id, file_url: url, file_name: file.name, file_size_bytes: file.size });
+    }
+  }
+
+  if (form.email_confirmation_enabled && emailValue){
+    sb.functions.invoke('send-confirmation-email', { body: {
+      submissionId: sub.id, toEmail: emailValue,
+      subject: form.confirmation_subject, message: form.confirmation_message, fromName: form.title
+    }}).catch(()=>{});
+  }
+
+  if (form.payment_enabled){
+    const successUrl = `${location.origin}${location.pathname}#/form/${form.slug}?paid=1&psub=${sub.id}`;
+    const cancelUrl = `${location.origin}${location.pathname}#/form/${form.slug}?paid=0&psub=${sub.id}`;
+    const { data: session, error: fnErr } = await sb.functions.invoke('create-checkout-session', { body: {
+      formTitle: form.title, amount: form.payment_amount, currency: form.payment_currency,
+      submissionId: sub.id, successUrl, cancelUrl
+    }});
+    if (fnErr || !session || session.error || !session.url){
+      return renderFormShell(form, fields, (session && session.error) || 'Payment isn\'t configured yet on this form (missing Stripe key). Contact the site owner.');
+    }
+    location.href = session.url;
+    return;
+  }
+
+  app.innerHTML = `<div class="public-shell"><div class="wrap"><div class="public-card success-box">
+    <div class="success-icon">✓</div>
+    <h2>${esc(form.success_message || 'Thank you!')}</h2>
+  </div></div></div>`;
+}
+
+async function showPaymentResult(form, submissionId){
+  app.innerHTML = `<div class="public-shell"><div class="wrap"><div class="public-card success-box">
+    <div class="success-icon">…</div><h2>Confirming your payment…</h2>
+  </div></div></div>`;
+  let status = 'pending';
+  for (let i=0;i<6;i++){
+    const { data } = await sb.from('form_submissions').select('payment_status').eq('id', submissionId).single();
+    status = data ? data.payment_status : status;
+    if (status === 'paid') break;
+    await new Promise(r=>setTimeout(r,1500));
+  }
+  const ok = status === 'paid';
+  document.querySelector('.public-card').innerHTML = `
+    <div class="success-icon">${ok?'✓':'!'}</div>
+    <h2>${ok ? (form.success_message || 'Thank you! Payment received.') : 'Payment not confirmed yet'}</h2>
+    <p class="muted">${ok ? '' : 'If you completed payment, it may take a moment to confirm — refresh in a bit, or contact us if this persists.'}</p>`;
+}
+
+// ---------- DOCUMENTS (personal, Google-Docs-style writer) ----------
+async function renderDocsList(){
+  app.innerHTML = topbar('docs') + `<div class="wrap"><h1>Documents</h1><p class="muted">Write and keep documents, separate from your forms.</p><div id="docList" class="card"><div class="empty">Loading…</div></div></div>`;
+  const { data: docs, error } = await sb.from('documents').select('id,title,updated_at').order('updated_at', { ascending:false });
+  const el = document.getElementById('docList');
+  if (error){ el.innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  if (!docs.length){ el.innerHTML = `<div class="empty">No documents yet. <a href="#/docs/new">Write your first one</a>.</div>`; return; }
+  el.innerHTML = docs.map(d => `
+    <div class="list-item">
+      <div><strong>${esc(d.title || 'Untitled document')}</strong><div class="muted">Edited ${fmtDate(d.updated_at)}</div></div>
+      <div style="display:flex;gap:8px;">
+        <a href="#/docs/${d.id}"><button class="btn secondary small">Open</button></a>
+        <button class="btn danger small" onclick="deleteDoc('${d.id}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function deleteDoc(id){
+  if (!confirm('Delete this document? This cannot be undone.')) return;
+  await sb.from('documents').delete().eq('id', id);
+  renderDocsList();
+}
+
+let docState = null;
+let docSaveTimer = null;
+
+async function renderDocEditor(id){
+  if (id){
+    const { data, error } = await sb.from('documents').select('*').eq('id', id).single();
+    if (error || !data){ return renderDocsList(); }
+    docState = data;
+  } else {
+    docState = { id:null, title:'Untitled document', content:'' };
+  }
+  drawDocEditor();
+}
+
+function drawDocEditor(){
+  const d = docState;
+  app.innerHTML = topbar('docs') + `
+  <div class="wrap">
+    <div class="doc-meta" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <a href="#/docs" class="muted">← All documents</a>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span id="docSaveStatus" class="muted" style="font-size:12px;"></span>
+        <button class="btn secondary small" id="shareBtn">Share</button>
+        <button class="btn secondary small" id="printBtn">Download as PDF</button>
+        <button class="btn small" id="saveDocBtn">Save</button>
+      </div>
+    </div>
+    <div id="sharePanel" class="card" style="display:none;margin-bottom:14px;">
+      <div class="toggle-row" style="border:none;padding:4px 0;">
+        <div><strong>Anyone with the link can view</strong><div class="muted">Read-only — viewers can't edit, even without logging in</div></div>
+        <label class="switch"><input type="checkbox" id="sharePublic"><span class="slider"></span></label>
+      </div>
+      <div id="shareLinkRow" class="link-copy" style="display:none;margin-top:8px;">
+        <input id="shareLinkInput" readonly />
+        <button class="btn secondary small" id="copyShareLink">Copy</button>
+      </div>
+    </div>
+    <div class="doc-toolbar">
+      <select id="fontFamily">
+        <option value="">Font</option>
+        <option value="Arial" style="font-family:Arial">Arial</option>
+        <option value="Georgia" style="font-family:Georgia">Georgia</option>
+        <option value="'Times New Roman'" style="font-family:'Times New Roman'">Times New Roman</option>
+        <option value="'Courier New'" style="font-family:'Courier New'">Courier New</option>
+        <option value="Verdana" style="font-family:Verdana">Verdana</option>
+        <option value="'Trebuchet MS'" style="font-family:'Trebuchet MS'">Trebuchet MS</option>
+      </select>
+      <select id="fontSize">
+        <option value="">Size</option>
+        <option value="1">Small</option>
+        <option value="3" selected>Normal</option>
+        <option value="5">Large</option>
+        <option value="7">Huge</option>
+      </select>
+      <button type="button" data-cmd="bold"><b>B</b></button>
+      <button type="button" data-cmd="italic"><i>I</i></button>
+      <button type="button" data-cmd="underline"><u>U</u></button>
+      <label style="display:flex;align-items:center;gap:3px;padding:0 4px;font-size:12px;color:var(--muted);">A<input type="color" id="textColor" value="#12211c" style="width:22px;height:22px;padding:0;border:none;"></label>
+      <label style="display:flex;align-items:center;gap:3px;padding:0 4px;font-size:12px;color:var(--muted);">✎<input type="color" id="highlightColor" value="#fff6a3" style="width:22px;height:22px;padding:0;border:none;"></label>
+      <select id="blockType">
+        <option value="p">Paragraph</option>
+        <option value="h1">Heading 1</option>
+        <option value="h2">Heading 2</option>
+        <option value="h3">Heading 3</option>
+      </select>
+      <button type="button" data-cmd="insertUnorderedList">• List</button>
+      <button type="button" data-cmd="insertOrderedList">1. List</button>
+      <button type="button" data-cmd="justifyLeft">⟸</button>
+      <button type="button" data-cmd="justifyCenter">≡</button>
+      <button type="button" data-cmd="justifyRight">⟹</button>
+      <button type="button" id="insertImageBtn">🖼 Image</button>
+      <button type="button" id="insertTableBtn">▦ Table</button>
+      <button type="button" id="insertLinkBtn">🔗 Link</button>
+      <button type="button" data-cmd="removeFormat">Clear</button>
+      <input type="file" id="imageFileInput" accept="image/*" style="display:none;">
+    </div>
+    <div class="doc-page" id="docPageWrap">
+      <input class="doc-title-input" id="docTitle" value="${esc(d.title)}" placeholder="Untitled document" />
+      <div class="muted" style="font-size:12px;margin-bottom:20px;">${d.id ? 'Last saved ' + fmtDate(d.updated_at) : 'Not saved yet'}</div>
+      <div id="docBody" contenteditable="true" style="min-height:500px;line-height:1.6;font-size:16px;">${d.content || ''}</div>
+    </div>
+    <div class="footer-note">Autosaves as you type. Use "Download as PDF" to export.</div>
+  </div>`;
+
+  document.querySelectorAll('.doc-toolbar button[data-cmd]').forEach(btn => {
+    btn.onclick = () => { document.execCommand(btn.dataset.cmd, false, null); document.getElementById('docBody').focus(); queueDocSave(); };
+  });
+  document.getElementById('blockType').onchange = e => { document.execCommand('formatBlock', false, e.target.value); document.getElementById('docBody').focus(); queueDocSave(); };
+  document.getElementById('fontFamily').onchange = e => { if (e.target.value) document.execCommand('fontName', false, e.target.value); document.getElementById('docBody').focus(); queueDocSave(); };
+  document.getElementById('fontSize').onchange = e => { if (e.target.value) document.execCommand('fontSize', false, e.target.value); document.getElementById('docBody').focus(); queueDocSave(); };
+  document.getElementById('textColor').oninput = e => { document.execCommand('foreColor', false, e.target.value); document.getElementById('docBody').focus(); queueDocSave(); };
+  document.getElementById('highlightColor').oninput = e => { document.execCommand('hiliteColor', false, e.target.value); document.getElementById('docBody').focus(); queueDocSave(); };
+
+  document.getElementById('insertLinkBtn').onclick = () => {
+    const url = prompt('Link URL (include https://)');
+    if (url) { document.execCommand('createLink', false, url); document.getElementById('docBody').focus(); queueDocSave(); }
+  };
+
+  document.getElementById('insertTableBtn').onclick = () => {
+    const rows = parseInt(prompt('Number of rows', '3'), 10);
+    const cols = parseInt(prompt('Number of columns', '3'), 10);
+    if (!rows || !cols) return;
+    let html = '<table style="border-collapse:collapse;width:100%;margin:10px 0;">';
+    for (let r=0; r<rows; r++){
+      html += '<tr>';
+      for (let c=0; c<cols; c++){
+        html += '<td style="border:1px solid #ccc;padding:8px;min-width:60px;">&nbsp;</td>';
+      }
+      html += '</tr>';
+    }
+    html += '</table><p><br></p>';
+    document.getElementById('docBody').focus();
+    document.execCommand('insertHTML', false, html);
+    queueDocSave();
+  };
+
+  document.getElementById('insertImageBtn').onclick = () => document.getElementById('imageFileInput').click();
+  document.getElementById('imageFileInput').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5*1024*1024){ alert('Images must be under 5MB.'); return; }
+    document.getElementById('docSaveStatus').textContent = 'Uploading image…';
+    const path = `${(docState.id||'draft')}-${Date.now()}-${file.name}`;
+    const { error: upErr } = await sb.storage.from('document-images').upload(path, file);
+    if (upErr){ alert('Image upload failed: ' + upErr.message); document.getElementById('docSaveStatus').textContent=''; return; }
+    const url = sb.storage.from('document-images').getPublicUrl(path).data.publicUrl;
+    document.getElementById('docBody').focus();
+    document.execCommand('insertHTML', false, `<img src="${url}" style="max-width:100%;border-radius:6px;margin:8px 0;" />`);
+    e.target.value = '';
+    queueDocSave();
+  };
+
+  document.getElementById('docTitle').addEventListener('input', queueDocSave);
+  document.getElementById('docBody').addEventListener('input', queueDocSave);
+  document.getElementById('saveDocBtn').onclick = () => saveDoc(true);
+  document.getElementById('printBtn').onclick = () => { saveDoc(false).then(() => window.print()); };
+
+  const shareBtn = document.getElementById('shareBtn');
+  const sharePanel = document.getElementById('sharePanel');
+  const sharePublic = document.getElementById('sharePublic');
+  const shareLinkRow = document.getElementById('shareLinkRow');
+  const shareLinkInput = document.getElementById('shareLinkInput');
+
+  function reflectShareState(){
+    sharePublic.checked = !!d.is_public;
+    shareLinkRow.style.display = d.is_public ? '' : 'none';
+    if (d.is_public && d.id) shareLinkInput.value = `${location.origin}${location.pathname}#/docs/view/${d.id}`;
+  }
+
+  shareBtn.onclick = async () => {
+    if (!d.id){ await saveDoc(false); }
+    reflectShareState();
+    sharePanel.style.display = sharePanel.style.display === 'none' ? '' : 'none';
+  };
+  sharePublic.onchange = async (e) => {
+    if (!d.id) await saveDoc(false);
+    const { error } = await sb.from('documents').update({ is_public: e.target.checked }).eq('id', d.id);
+    if (!error){ d.is_public = e.target.checked; reflectShareState(); }
+  };
+  document.getElementById('copyShareLink').onclick = () => {
+    navigator.clipboard.writeText(shareLinkInput.value);
+    document.getElementById('copyShareLink').textContent = 'Copied';
+    setTimeout(() => { document.getElementById('copyShareLink').textContent = 'Copy'; }, 1200);
+  };
+}
+
+function queueDocSave(){
+  document.getElementById('docSaveStatus').textContent = 'Saving…';
+  clearTimeout(docSaveTimer);
+  docSaveTimer = setTimeout(() => saveDoc(false), 800);
+}
+
+async function saveDoc(manual){
+  const title = document.getElementById('docTitle').value.trim() || 'Untitled document';
+  const content = document.getElementById('docBody').innerHTML;
+  const status = document.getElementById('docSaveStatus');
+
+  if (docState.id){
+    const { error } = await sb.from('documents').update({ title, content, updated_at: new Date().toISOString() }).eq('id', docState.id);
+    if (error){ status.textContent = 'Save failed'; return; }
+  } else {
+    const { data, error } = await sb.from('documents').insert({ title, content }).select().single();
+    if (error){ status.textContent = 'Save failed'; return; }
+    docState.id = data.id;
+    history.replaceState(null, '', `#/docs/${data.id}`);
+  }
+  docState.title = title; docState.content = content; docState.updated_at = new Date().toISOString();
+  status.textContent = manual ? 'Saved ✓' : 'Saved';
+  setTimeout(() => { if (status.textContent !== 'Saving…') status.textContent = ''; }, 1500);
+}
+
+async function renderDocViewer(id){
+  app.innerHTML = `<div class="public-shell"><div class="wrap"><div class="public-card center">Loading…</div></div></div>`;
+  const { data: doc, error } = await sb.from('documents').select('*').eq('id', id).eq('is_public', true).single();
+  if (error || !doc){
+    document.querySelector('.public-card').innerHTML = `<h2>Document not available</h2><p class="muted">This link may have been unshared, or the document doesn't exist.</p>`;
+    return;
+  }
+  app.innerHTML = `<div class="public-shell"><div class="wrap">
+    <div class="doc-meta muted" style="text-align:center;margin-bottom:14px;font-size:13px;">View only · shared from EcoLens Forms</div>
+    <div class="doc-page">
+      <h1 style="margin:0 0 4px;">${esc(doc.title || 'Untitled document')}</h1>
+      <div class="muted" style="font-size:12px;margin-bottom:20px;">Last updated ${fmtDate(doc.updated_at)}</div>
+      <div style="line-height:1.6;font-size:16px;">${doc.content || ''}</div>
+    </div>
+    <div class="footer-note">Powered by EcoLens Forms</div>
+  </div></div>`;
+}
+</script>
+</body>
+</html>

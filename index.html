@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>E Governanace system Built By Anoof K</title>
+<title>EcoLens eGov</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -33,7 +33,7 @@
   .field{margin-bottom:16px;}
   .row{display:flex;gap:14px;}
   .row > *{flex:1;}
-  .topbar{background:#fff;border-bottom:1px solid var(--line);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+  .topbar{background:#fff;border-bottom:1px solid var(--line);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;flex-wrap:wrap;gap:8px;}
   .brand{font-weight:800;font-size:18px;letter-spacing:-0.02em;display:flex;align-items:center;gap:8px;}
   .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--brand);}
   .wrap{max-width:920px;margin:0 auto;padding:28px 20px 80px;}
@@ -43,6 +43,9 @@
   .badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:20px;}
   .badge.live{background:#e2f4ea;color:var(--brand-dark);}
   .badge.draft{background:#eee;color:#777;}
+  .badge.pending{background:#fef3d7;color:#b47d2e;}
+  .badge.in_progress{background:#dbeafe;color:#1e40af;}
+  .badge.completed{background:#d1fae5;color:#065f46;}
   h1{font-size:24px;margin:0 0 4px;}
   h2{font-size:18px;margin:0 0 14px;}
   .muted{color:var(--muted);font-size:14px;}
@@ -95,6 +98,9 @@
   .home-card h2{margin:0 0 6px;}
   .home-card p{margin:0;color:var(--muted);font-size:14px;}
   @media print{ .topbar,.doc-toolbar,.footer-note,.doc-meta{display:none !important;} .doc-page{box-shadow:none;border:none;margin:0;padding:0;} body{background:#fff;} }
+  .attendee-badge{display:inline-block;background:#eef2ef;padding:4px 10px;border-radius:20px;font-size:12px;margin:0 4px 4px 0;}
+  .attendee-badge .remove-attendee{margin-left:6px;cursor:pointer;color:var(--danger);font-weight:bold;}
+  .task-status-select{width:auto;display:inline-block;}
 </style>
 </head>
 <body>
@@ -159,6 +165,16 @@ function route(){
   if (parts[0] === 'docs') return requireAuth(renderDocsList);
   if (parts[0] === 'admins') return requireAuth(renderAdmins);
   if (parts[0] === 'settings') return requireAuth(renderSettings);
+  // New: tasks
+  if (parts[0] === 'tasks' && parts[1] === 'new') return requireAuth(() => renderTaskEditor(null));
+  if (parts[0] === 'tasks' && parts[1] === 'edit' && parts[2]) return requireAuth(() => renderTaskEditor(parts[2]));
+  if (parts[0] === 'tasks') return requireAuth(renderTasksList);
+  // New: meetings
+  if (parts[0] === 'meetings' && parts[1] === 'new') return requireAuth(() => renderMeetingEditor(null));
+  if (parts[0] === 'meetings' && parts[1] === 'edit' && parts[2]) return requireAuth(() => renderMeetingEditor(parts[2]));
+  if (parts[0] === 'meeting' && parts[1] === 'view' && parts[2]) return renderPublicMeeting(parts[2]);
+  if (parts[0] === 'meetings') return requireAuth(renderMeetingsList);
+  // Home
   return requireAuth(renderHome);
 }
 
@@ -291,9 +307,11 @@ async function callAdminFn(action, payload){
 function topbar(active){
   return `<div class="topbar">
     <a href="#/" style="text-decoration:none;color:inherit;"><div class="brand"><span class="dot"></span>EcoLens eGov</div></a>
-    <div style="display:flex;gap:10px;align-items:center;">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <a href="#/forms"><button class="btn ${active==='forms'?'':'secondary'} small">Forms</button></a>
       <a href="#/docs"><button class="btn ${active==='docs'?'':'secondary'} small">Documents</button></a>
+      <a href="#/tasks"><button class="btn ${active==='tasks'?'':'secondary'} small">Tasks</button></a>
+      <a href="#/meetings"><button class="btn ${active==='meetings'?'':'secondary'} small">Meetings</button></a>
       <a href="#/admins"><button class="btn ${active==='admins'?'':'secondary'} small">Admins</button></a>
       <a href="#/settings"><button class="btn ${active==='settings'?'':'secondary'} small">Settings</button></a>
       <a href="#/new"><button class="btn secondary small">+ New form</button></a>
@@ -319,6 +337,16 @@ async function renderHome(){
         <div class="home-icon">📝</div>
         <h2>Documents</h2>
         <p>Write and manage documents, and share read-only links when you're ready.</p>
+      </a>
+      <a class="home-card" href="#/tasks">
+        <div class="home-icon">✅</div>
+        <h2>Tasks</h2>
+        <p>Assign and track tasks with statuses, due dates, and assignees.</p>
+      </a>
+      <a class="home-card" href="#/meetings">
+        <div class="home-icon">📅</div>
+        <h2>Meetings</h2>
+        <p>Schedule meetings, manage attendees, and send email invitations.</p>
       </a>
     </div>
   </div>`;
@@ -379,7 +407,7 @@ async function removeAdmin(userId){
 
 // ---------- SETTINGS (integrations / API keys) ----------
 const SETTINGS_KEYS = [
-  { key: 'RESEND_API_KEY', label: 'Resend API key', placeholder: 're_xxxxxxxxxxxxxxxxxxxxxxxx', hint: 'Used to send email confirmations to form submitters. Get one at resend.com → API Keys.' },
+  { key: 'RESEND_API_KEY', label: 'Resend API key', placeholder: 're_xxxxxxxxxxxxxxxxxxxxxxxx', hint: 'Used to send email confirmations to form submitters and meeting invitations. Get one at resend.com → API Keys.' },
   { key: 'STRIPE_SECRET_KEY', label: 'Stripe secret key', placeholder: 'sk_live_xxxxxxxxxxxxxxxxxxxxxxxx', hint: 'Used to charge payments on forms with payment enabled. Get one at dashboard.stripe.com → Developers → API keys.' },
 ];
 
@@ -442,9 +470,7 @@ async function clearSetting(key){
   renderSettings();
 }
 
-
-
-// ---------- DASHBOARD ----------
+// ---------- DASHBOARD (Forms) ----------
 async function renderDashboard(){
   app.innerHTML = topbar('forms') + `<div class="wrap"><h1>Your forms</h1><p class="muted">Build a form, share its link, and track submissions.</p><div id="list" class="card"><div class="empty">Loading…</div></div></div>`;
   const { data: forms, error } = await sb.from('forms').select('*').order('created_at', { ascending:false });
@@ -488,7 +514,7 @@ async function deleteForm(id){
   renderDashboard();
 }
 
-// ---------- BUILDER ----------
+// ---------- BUILDER (unchanged) ----------
 let builderState = null;
 
 async function renderBuilder(formId){
@@ -499,7 +525,7 @@ async function renderBuilder(formId){
   } else {
     builderState = {
       id: null, title:'', slug:'', description:'', logo_url:'', brand_color:'#1f7a5c',
-      published:false, allow_file_upload:false, max_file_size_mb:5,
+      published:false, allow_file_upload:true, max_file_size_mb:5,
       payment_enabled:false, payment_amount:0, payment_currency:'INR', payment_gateway:'stripe',
       email_confirmation_enabled:false, confirmation_subject:'Thanks for your submission!',
       confirmation_message:'We received your submission and will be in touch soon.',
@@ -731,7 +757,9 @@ async function saveForm(){
   setTimeout(() => renderBuilder(formId), 300);
 }
 
-// ---------- SUBMISSIONS ----------
+// ---------- SUBMISSIONS (unchanged) ----------
+let subsState = null; // { form, fields, subs }
+
 async function renderSubmissions(formId){
   app.innerHTML = topbar('forms') + `<div class="wrap"><div id="subHead"></div><div class="card"><div id="subTable" class="table-wrap"><div class="empty">Loading…</div></div></div></div>`;
   const { data: form } = await sb.from('forms').select('*, form_fields(*)').eq('id', formId).single();
@@ -742,25 +770,104 @@ async function renderSubmissions(formId){
   const { data: subs, error } = await sb.from('form_submissions').select('*, form_submission_files(*)').eq('form_id', formId).order('created_at',{ascending:false});
   const el = document.getElementById('subTable');
   if (error){ el.innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
-  if (!subs.length){ el.innerHTML = '<div class="empty">No submissions yet.</div>'; return; }
+  subsState = { form, fields, subs: subs || [] };
 
-  el.innerHTML = `<table><thead><tr>
-    <th>Reference</th>
+  const exportBar = `<div class="toolbar" style="margin-bottom:14px;">
+    <button class="btn secondary" id="downloadCsvBtn" ${!subs.length ? 'disabled' : ''}>⇩ Download spreadsheet (CSV)</button>
+    <button class="btn secondary" id="shareCsvBtn" ${!subs.length ? 'disabled' : ''}>↗ Share spreadsheet</button>
+    <div class="muted" style="align-self:center;font-size:12px;">Opens in Excel, Google Sheets, or Numbers — includes application number &amp; document status. Share sends the file straight to WhatsApp, Mail, Drive, etc. on your phone.</div>
+  </div>`;
+
+  if (!subs.length){ el.innerHTML = exportBar + '<div class="empty">No submissions yet.</div>'; return; }
+
+  el.innerHTML = exportBar + `<table><thead><tr>
+    <th>Application #</th>
     <th>Submitted</th>
     ${fields.map(f=>`<th>${esc(f.label)}</th>`).join('')}
     ${form.payment_enabled ? '<th>Payment</th>' : ''}
-    ${form.allow_file_upload ? '<th>Files</th>' : ''}
+    ${form.allow_file_upload ? '<th>Documents</th>' : ''}
   </tr></thead><tbody>
   ${subs.map(sub => `<tr>
     <td>${esc(sub.reference_number || '—')}</td>
     <td>${fmtDate(sub.created_at)}</td>
     ${fields.map(f => `<td>${esc(formatVal(sub.data ? sub.data[f.id] : null))}</td>`).join('')}
     ${form.payment_enabled ? `<td>${esc(sub.payment_status)}</td>` : ''}
-    ${form.allow_file_upload ? `<td>${(sub.form_submission_files||[]).map(file=>`<a href="${file.file_url}" target="_blank">${esc(file.file_name)}</a>`).join(', ') || '—'}</td>` : ''}
+    ${form.allow_file_upload ? `<td>${docCellHtml(sub.form_submission_files)}</td>` : ''}
   </tr>`).join('')}
   </tbody></table>`;
+
+  const dlBtn = document.getElementById('downloadCsvBtn');
+  if (dlBtn) dlBtn.onclick = () => downloadSubmissionsCsv(subsState);
+  const shareBtn = document.getElementById('shareCsvBtn');
+  if (shareBtn) shareBtn.onclick = () => shareSubmissionsCsv(subsState, shareBtn);
 }
+
+function docCellHtml(files){
+  if (!files || !files.length) return `<span class="badge draft">No documents</span>`;
+  const links = files.map(file => `<a href="${file.file_url}" target="_blank" rel="noopener">${esc(file.file_name)}</a>`).join('<br>');
+  return `<span class="badge live" style="margin-bottom:4px;display:inline-block;">${files.length} file${files.length>1?'s':''}</span><br>${links}`;
+}
+
 function formatVal(v){ if (v==null) return '—'; if (Array.isArray(v)) return v.join(', '); return v; }
+
+// ---------- SPREADSHEET EXPORT ----------
+function csvEscape(v){
+  const s = (v ?? '').toString();
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+
+function buildSubmissionsCsv({ form, fields, subs }){
+  const headers = [
+    'Application Number', 'Submitted', ...fields.map(f => f.label),
+    ...(form.payment_enabled ? ['Payment Status'] : []),
+    ...(form.allow_file_upload ? ['Documents Available', 'Document Links'] : []),
+  ];
+  const rows = subs.map(sub => {
+    const files = sub.form_submission_files || [];
+    return [
+      sub.reference_number || '',
+      fmtDate(sub.created_at),
+      ...fields.map(f => formatVal(sub.data ? sub.data[f.id] : null)),
+      ...(form.payment_enabled ? [sub.payment_status || ''] : []),
+      ...(form.allow_file_upload ? [files.length ? 'Yes' : 'No', files.map(f=>f.file_url).join(' | ')] : []),
+    ];
+  });
+  const csv = [headers, ...rows].map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const filename = `${slugify(form.title || 'submissions')}-applications.csv`;
+  return { csv, filename };
+}
+
+function downloadSubmissionsCsv(state){
+  const { csv, filename } = buildSubmissionsCsv(state);
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+async function shareSubmissionsCsv(state, btnEl){
+  const { csv, filename } = buildSubmissionsCsv(state);
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const file = new File([blob], filename, { type: 'text/csv' });
+  const shareData = { files: [file], title: state.form.title, text: `Applications for ${state.form.title}` };
+
+  if (navigator.canShare && navigator.canShare(shareData)){
+    try { await navigator.share(shareData); return; }
+    catch(e){ if (e && e.name === 'AbortError') return; /* fall through to download on other errors */ }
+  }
+  // Fallback for browsers/desktops without native file sharing: just download it.
+  downloadSubmissionsCsv(state);
+  if (btnEl){
+    const original = btnEl.textContent;
+    btnEl.textContent = 'Sharing not supported here — downloaded instead';
+    setTimeout(() => { btnEl.textContent = original; }, 2500);
+  }
+}
 
 // ---------- PUBLIC FORM ----------
 async function renderPublicForm(slug){
@@ -938,7 +1045,7 @@ async function showPaymentResult(form, submissionId){
       </div>` : ''}`;
 }
 
-// ---------- PUBLIC TRACKING (lookup by reference number) ----------
+// ---------- PUBLIC TRACKING ----------
 async function renderTrackStatus(ref){
   app.innerHTML = `<div class="public-shell"><div class="wrap"><div class="public-card center">Looking up your submission…</div></div></div>`;
   const { data, error } = await sb.rpc('get_submission_status', { ref });
@@ -965,7 +1072,7 @@ async function renderTrackStatus(ref){
   </div></div></div>`;
 }
 
-// ---------- DOCUMENTS (personal, Google-Docs-style writer) ----------
+// ---------- DOCUMENTS (unchanged) ----------
 async function renderDocsList(){
   app.innerHTML = topbar('docs') + `<div class="wrap"><h1>Documents</h1><p class="muted">Write and keep documents, separate from your forms.</p><div id="docList" class="card"><div class="empty">Loading…</div></div></div>`;
   const { data: docs, error } = await sb.from('documents').select('id,title,updated_at').order('updated_at', { ascending:false });
@@ -1196,6 +1303,298 @@ async function renderDocViewer(id){
     <div class="footer-note">Powered by EcoLens eGov</div>
   </div></div>`;
 }
+
+// ---------- TASK MANAGEMENT ----------
+async function renderTasksList() {
+  app.innerHTML = topbar('tasks') + `<div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div><h1>Tasks</h1><p class="muted">Manage your to‑do list.</p></div>
+      <a href="#/tasks/new"><button class="btn">+ New task</button></a>
+    </div>
+    <div class="card" id="taskList"><div class="empty">Loading…</div></div>
+  </div>`;
+
+  const { data: tasks, error } = await sb
+    .from('tasks')
+    .select('*, assigned_to_profile:profiles(id, email, full_name), created_by_profile:profiles(id, email, full_name)')
+    .order('created_at', { ascending: false });
+
+  const el = document.getElementById('taskList');
+  if (error) {
+    el.innerHTML = `<div class="empty">Could not load tasks: ${esc(error.message)}</div>`;
+    return;
+  }
+  if (!tasks || tasks.length === 0) {
+    el.innerHTML = `<div class="empty">No tasks yet. <a href="#/tasks/new">Create your first task</a>.</div>`;
+    return;
+  }
+
+  el.innerHTML = tasks.map(t => {
+    const assignee = t.assigned_to_profile ? (t.assigned_to_profile.full_name || t.assigned_to_profile.email) : 'Unassigned';
+    const statusClass = t.status === 'completed' ? 'completed' : (t.status === 'in_progress' ? 'in_progress' : 'pending');
+    return `<div class="list-item">
+      <div>
+        <strong>${esc(t.title)}</strong>
+        <span class="badge ${statusClass}">${esc(t.status)}</span>
+        <div class="muted" style="font-size:12px;">
+          Assigned to ${esc(assignee)} ${t.due_date ? '· due ' + fmtDate(t.due_date) : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <a href="#/tasks/edit/${t.id}"><button class="btn secondary small">Edit</button></a>
+        <button class="btn danger small" onclick="deleteTask('${t.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  await sb.from('tasks').delete().eq('id', id);
+  renderTasksList();
+}
+
+async function renderTaskEditor(taskId) {
+  let task = { title: '', description: '', status: 'pending', due_date: '', assigned_to: '' };
+  let adminOptions = [];
+
+  // Fetch admins for assignment dropdown
+  const { data: admins } = await sb.from('profiles').select('id, email, full_name').eq('role', 'admin');
+  if (admins) adminOptions = admins;
+
+  if (taskId) {
+    const { data } = await sb.from('tasks').select('*').eq('id', taskId).single();
+    if (data) task = data;
+  }
+
+  app.innerHTML = topbar('tasks') + `<div class="wrap">
+    <h1>${taskId ? 'Edit' : 'New'} Task</h1>
+    <div class="card">
+      <div class="field"><label>Title</label><input id="taskTitle" value="${esc(task.title)}" /></div>
+      <div class="field"><label>Description</label><textarea id="taskDesc" rows="3">${esc(task.description)}</textarea></div>
+      <div class="row">
+        <div class="field"><label>Status</label>
+          <select id="taskStatus">
+            <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pending</option>
+            <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+            <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>Completed</option>
+          </select>
+        </div>
+        <div class="field"><label>Due date</label><input type="datetime-local" id="taskDue" value="${task.due_date ? new Date(task.due_date).toISOString().slice(0,16) : ''}" /></div>
+      </div>
+      <div class="field"><label>Assign to</label>
+        <select id="taskAssignee">
+          <option value="">Unassigned</option>
+          ${adminOptions.map(a => `<option value="${a.id}" ${task.assigned_to === a.id ? 'selected' : ''}>${esc(a.full_name || a.email)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="saveTaskBtn">Save task</button>
+        <div id="taskSaveMsg" class="muted" style="align-self:center;"></div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('saveTaskBtn').onclick = async () => {
+    const title = document.getElementById('taskTitle').value.trim();
+    if (!title) { document.getElementById('taskSaveMsg').textContent = 'Title is required.'; return; }
+    const payload = {
+      title,
+      description: document.getElementById('taskDesc').value,
+      status: document.getElementById('taskStatus').value,
+      due_date: document.getElementById('taskDue').value || null,
+      assigned_to: document.getElementById('taskAssignee').value || null,
+    };
+    const msg = document.getElementById('taskSaveMsg');
+    msg.textContent = 'Saving…';
+    if (taskId) {
+      const { error } = await sb.from('tasks').update(payload).eq('id', taskId);
+      if (error) { msg.textContent = 'Error: ' + error.message; return; }
+    } else {
+      payload.created_by = currentUser.id;
+      const { error } = await sb.from('tasks').insert(payload);
+      if (error) { msg.textContent = 'Error: ' + error.message; return; }
+    }
+    msg.textContent = 'Saved ✓';
+    setTimeout(() => location.hash = '#/tasks', 600);
+  };
+}
+
+// ---------- MEETING MANAGEMENT ----------
+async function renderMeetingsList() {
+  app.innerHTML = topbar('meetings') + `<div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div><h1>Meetings</h1><p class="muted">Schedule and manage meetings with invitations.</p></div>
+      <a href="#/meetings/new"><button class="btn">+ New meeting</button></a>
+    </div>
+    <div class="card" id="meetingList"><div class="empty">Loading…</div></div>
+  </div>`;
+
+  const { data: meetings, error } = await sb
+    .from('meetings')
+    .select('*, meeting_attendees(id)')
+    .order('start_time', { ascending: false });
+
+  const el = document.getElementById('meetingList');
+  if (error) {
+    el.innerHTML = `<div class="empty">Could not load meetings: ${esc(error.message)}</div>`;
+    return;
+  }
+  if (!meetings || meetings.length === 0) {
+    el.innerHTML = `<div class="empty">No meetings scheduled. <a href="#/meetings/new">Create your first meeting</a>.</div>`;
+    return;
+  }
+
+  el.innerHTML = meetings.map(m => {
+    const attendeeCount = (m.meeting_attendees || []).length;
+    const start = new Date(m.start_time);
+    const end = new Date(m.end_time);
+    const dateStr = isNaN(start) ? 'Invalid date' : start.toLocaleString();
+    return `<div class="list-item">
+      <div>
+        <strong>${esc(m.title)}</strong>
+        <span class="badge live">${attendeeCount} attendee${attendeeCount !== 1 ? 's' : ''}</span>
+        <div class="muted" style="font-size:12px;">${dateStr}${m.location ? ' · ' + esc(m.location) : ''}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <a href="#/meetings/edit/${m.id}"><button class="btn secondary small">Edit</button></a>
+        <button class="btn danger small" onclick="deleteMeeting('${m.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteMeeting(id) {
+  if (!confirm('Delete this meeting and its attendee list?')) return;
+  await sb.from('meetings').delete().eq('id', id);
+  renderMeetingsList();
+}
+
+async function renderMeetingEditor(meetingId) {
+  let meeting = { title: '', description: '', start_time: '', end_time: '', location: '', join_link: '' };
+  let attendees = [];
+
+  if (meetingId) {
+    const { data } = await sb.from('meetings').select('*').eq('id', meetingId).single();
+    if (data) meeting = data;
+    const { data: atts } = await sb.from('meeting_attendees').select('attendee_email').eq('meeting_id', meetingId);
+    if (atts) attendees = atts.map(a => a.attendee_email);
+  }
+
+  app.innerHTML = topbar('meetings') + `<div class="wrap">
+    <h1>${meetingId ? 'Edit' : 'New'} Meeting</h1>
+    <div class="card">
+      <div class="field"><label>Title</label><input id="mtitle" value="${esc(meeting.title)}" /></div>
+      <div class="field"><label>Description</label><textarea id="mdesc" rows="3">${esc(meeting.description)}</textarea></div>
+      <div class="row">
+        <div class="field"><label>Start time</label><input type="datetime-local" id="mstart" value="${meeting.start_time ? new Date(meeting.start_time).toISOString().slice(0,16) : ''}" /></div>
+        <div class="field"><label>End time</label><input type="datetime-local" id="mend" value="${meeting.end_time ? new Date(meeting.end_time).toISOString().slice(0,16) : ''}" /></div>
+      </div>
+      <div class="field"><label>Location / Join link</label><input id="mlocation" value="${esc(meeting.location)}" placeholder="Zoom link or physical address" /></div>
+      <div class="field"><label>Attendee emails (comma separated)</label>
+        <input id="mattendees" value="${esc(attendees.join(', '))}" placeholder="alice@example.com, bob@example.com" />
+        <div class="file-hint">Invitations will be sent after saving.</div>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="saveMeetingBtn">Save meeting & send invites</button>
+        <div id="meetingSaveMsg" class="muted" style="align-self:center;"></div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('saveMeetingBtn').onclick = async () => {
+    const title = document.getElementById('mtitle').value.trim();
+    if (!title) { document.getElementById('meetingSaveMsg').textContent = 'Title is required.'; return; }
+    const start = document.getElementById('mstart').value;
+    const end = document.getElementById('mend').value;
+    if (!start || !end) { document.getElementById('meetingSaveMsg').textContent = 'Start and end times are required.'; return; }
+    if (new Date(start) >= new Date(end)) { document.getElementById('meetingSaveMsg').textContent = 'End time must be after start time.'; return; }
+
+    const payload = {
+      title,
+      description: document.getElementById('mdesc').value,
+      start_time: start,
+      end_time: end,
+      location: document.getElementById('mlocation').value,
+      join_link: document.getElementById('mlocation').value, // can be separate if needed
+    };
+    const msg = document.getElementById('meetingSaveMsg');
+    msg.textContent = 'Saving…';
+
+    let savedId = meetingId;
+    if (meetingId) {
+      const { error } = await sb.from('meetings').update(payload).eq('id', meetingId);
+      if (error) { msg.textContent = 'Error: ' + error.message; return; }
+    } else {
+      payload.created_by = currentUser.id;
+      const { data, error } = await sb.from('meetings').insert(payload).select().single();
+      if (error) { msg.textContent = 'Error: ' + error.message; return; }
+      savedId = data.id;
+    }
+
+    // Update attendees
+    const emails = document.getElementById('mattendees').value.split(',').map(e => e.trim()).filter(Boolean);
+    await sb.from('meeting_attendees').delete().eq('meeting_id', savedId);
+    if (emails.length) {
+      const rows = emails.map(email => ({ meeting_id: savedId, attendee_email: email }));
+      const { error } = await sb.from('meeting_attendees').insert(rows);
+      if (error) { msg.textContent = 'Attendees saved, but error: ' + error.message; }
+    }
+
+    // Send invitations via Edge Function
+    if (emails.length) {
+      msg.textContent = 'Sending invitations…';
+      const { error: fnErr } = await sb.functions.invoke('send-meeting-invite', {
+        body: { meetingId: savedId }
+      });
+      if (fnErr) {
+        console.warn('Invite function error:', fnErr);
+        msg.textContent = 'Meeting saved, but invitation sending failed. Check function logs.';
+      } else {
+        msg.textContent = 'Meeting saved and invitations sent!';
+      }
+    } else {
+      msg.textContent = 'Meeting saved (no attendees).';
+    }
+
+    setTimeout(() => location.hash = '#/meetings', 1500);
+  };
+}
+
+// ---------- PUBLIC MEETING VIEW ----------
+async function renderPublicMeeting(meetingId) {
+  app.innerHTML = `<div class="public-shell"><div class="wrap"><div class="public-card center">Loading meeting details…</div></div></div>`;
+  const { data: meeting, error } = await sb
+    .from('meetings')
+    .select('*, meeting_attendees(attendee_email)')
+    .eq('id', meetingId)
+    .single();
+
+  if (error || !meeting) {
+    document.querySelector('.public-card').innerHTML = `<h2>Meeting not found</h2><p class="muted">This meeting may have been removed or is not shared publicly.</p>`;
+    return;
+  }
+
+  const start = new Date(meeting.start_time);
+  const end = new Date(meeting.end_time);
+  const attendeeCount = (meeting.meeting_attendees || []).length;
+
+  app.innerHTML = `<div class="public-shell"><div class="wrap"><div class="public-card">
+    <div class="public-header">
+      <h1>${esc(meeting.title)}</h1>
+      ${meeting.description ? `<p class="muted">${esc(meeting.description)}</p>` : ''}
+    </div>
+    <div class="field-card">
+      <p><strong>Start:</strong> ${fmtDate(start)}</p>
+      <p><strong>End:</strong> ${fmtDate(end)}</p>
+      ${meeting.location ? `<p><strong>Location:</strong> ${esc(meeting.location)}</p>` : ''}
+      ${meeting.join_link ? `<p><a href="${esc(meeting.join_link)}" target="_blank">Join meeting</a></p>` : ''}
+      <p><strong>Attendees:</strong> ${attendeeCount} people</p>
+    </div>
+    <div class="footer-note">Powered by EcoLens eGov</div>
+  </div></div></div>`;
+}
+
 </script>
 </body>
 </html>
